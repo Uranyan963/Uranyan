@@ -1,0 +1,14 @@
+{
+  "name": "たまふら｜多摩地域の休日イベント",
+  "short_name": "たまふら",
+  "description": "多摩地域26市の公式イベント情報から、休日にふらっと行けるイベントを探せます。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f0",
+  "theme_color": "#2f6f4f",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
