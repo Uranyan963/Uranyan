@@ -1,0 +1,27 @@
+name: probe (下見用ページ取得)
+# 新しい市・施設を追加するときの下見用。Actions タブから手動で実行する
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+    paths: ['scraper/probe-urls.txt']
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scraper/probe.mjs
+      - name: 取得結果をコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          [ -d scraper/probe ] || exit 0
+          git add scraper/probe
+          git diff --cached --quiet || git commit -m "probe: ページを取得"
+          git pull --rebase
+          git push

@@ -1,0 +1,5 @@
+node_modules/
+.DS_Store
+# 自動取得データ（公開時に GitHub Actions が作る。手元では npm run collect）
+data/
+_site/

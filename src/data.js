@@ -1,0 +1,182 @@
+// 拠点とイベントのデータ。
+// 「例年このあたり」というルールで登録しているので、年によって日程がずれることがある。
+// accuracy: 'fixed' = 毎年同じ日程 / 'approx' = 例年の目安（公式で要確認）
+
+export const CATEGORIES = {
+  matsuri: '祭り・縁日',
+  flower: '花・自然',
+  market: '市・マルシェ',
+  sports: 'スポーツ',
+  light: 'イルミネーション',
+  culture: '文化・歴史',
+  city: '市の公式イベント',
+};
+
+// 東京都の市（23区以外の26市）。座標は市役所付近で、自動取得したイベントの距離の目安に使う。
+export const CITIES = [
+  { name: '八王子市', url: 'https://www.city.hachioji.tokyo.jp/', lat: 35.6664, lng: 139.3160 },
+  { name: '立川市', url: 'https://www.city.tachikawa.lg.jp/', lat: 35.7139, lng: 139.4078 },
+  { name: '武蔵野市', url: 'https://www.city.musashino.lg.jp/', lat: 35.7178, lng: 139.5661 },
+  { name: '三鷹市', url: 'https://www.city.mitaka.lg.jp/', lat: 35.6836, lng: 139.5596 },
+  { name: '青梅市', url: 'https://www.city.ome.tokyo.jp/', lat: 35.7880, lng: 139.2759 },
+  { name: '府中市', url: 'https://www.city.fuchu.tokyo.jp/', lat: 35.6689, lng: 139.4776 },
+  { name: '昭島市', url: 'https://www.city.akishima.lg.jp/', lat: 35.7056, lng: 139.3536 },
+  { name: '調布市', url: 'https://www.city.chofu.lg.jp/', lat: 35.6505, lng: 139.5409 },
+  { name: '町田市', url: 'https://www.city.machida.tokyo.jp/', lat: 35.5465, lng: 139.4385 },
+  { name: '小金井市', url: 'https://www.city.koganei.lg.jp/', lat: 35.6994, lng: 139.5030 },
+  { name: '小平市', url: 'https://www.city.kodaira.tokyo.jp/', lat: 35.7285, lng: 139.4775 },
+  { name: '日野市', url: 'https://www.city.hino.lg.jp/', lat: 35.6713, lng: 139.3950 },
+  { name: '東村山市', url: 'https://www.city.higashimurayama.tokyo.jp/', lat: 35.7546, lng: 139.4685 },
+  { name: '国分寺市', url: 'https://www.city.kokubunji.tokyo.jp/', lat: 35.7109, lng: 139.4622 },
+  { name: '国立市', url: 'https://www.city.kunitachi.tokyo.jp/', lat: 35.6839, lng: 139.4414 },
+  { name: '福生市', url: 'https://www.city.fussa.tokyo.jp/', lat: 35.7387, lng: 139.3268 },
+  { name: '狛江市', url: 'https://www.city.komae.tokyo.jp/', lat: 35.6348, lng: 139.5787 },
+  { name: '東大和市', url: 'https://www.city.higashiyamato.lg.jp/', lat: 35.7453, lng: 139.4266 },
+  { name: '清瀬市', url: 'https://www.city.kiyose.lg.jp/', lat: 35.7856, lng: 139.5265 },
+  { name: '東久留米市', url: 'https://www.city.higashikurume.lg.jp/', lat: 35.7581, lng: 139.5297 },
+  { name: '武蔵村山市', url: 'https://www.city.musashimurayama.lg.jp/', lat: 35.7548, lng: 139.3875 },
+  { name: '多摩市', url: 'https://www.city.tama.lg.jp/', lat: 35.6370, lng: 139.4462 },
+  { name: '稲城市', url: 'https://www.city.inagi.tokyo.jp/', lat: 35.6380, lng: 139.5048 },
+  { name: '羽村市', url: 'https://www.city.hamura.tokyo.jp/', lat: 35.7672, lng: 139.3110 },
+  { name: 'あきる野市', url: 'https://www.city.akiruno.tokyo.jp/', lat: 35.7289, lng: 139.2941 },
+  { name: '西東京市', url: 'https://www.city.nishitokyo.lg.jp/', lat: 35.7256, lng: 139.5383 },
+];
+
+export const EVENTS = [
+  // ── 府中 ─────────────────────────────
+  {
+    id: 'kurayami',
+    name: 'くらやみ祭（大國魂神社 例大祭）',
+    city: '府中市', place: '大國魂神社', lat: 35.6681, lng: 139.4778,
+    category: 'matsuri', accuracy: 'fixed',
+    rule: { type: 'fixed', start: '04-30', end: '05-06' },
+    note: '5/5夜の神輿渡御がハイライト。東京都の無形民俗文化財。',
+  },
+  {
+    id: 'fuchu-torinoichi',
+    name: '酉の市（大國魂神社）',
+    city: '府中市', place: '大國魂神社', lat: 35.6681, lng: 139.4778,
+    category: 'matsuri', accuracy: 'fixed',
+    rule: { type: 'tori' },
+    note: '11月の酉の日に熊手の露店が並ぶ。日付は暦から自動計算。',
+  },
+  {
+    id: 'kyodonomori-ume',
+    name: '梅まつり（郷土の森博物館）',
+    city: '府中市', place: '府中市郷土の森博物館', lat: 35.6578, lng: 139.4630,
+    category: 'flower', accuracy: 'approx',
+    rule: { type: 'fixed', start: '02-07', end: '03-08' },
+    note: '約60品種・1,100本の梅。例年2月上旬〜3月上旬。',
+  },
+  {
+    id: 'kyodonomori-ajisai',
+    name: 'あじさいまつり（郷土の森博物館）',
+    city: '府中市', place: '府中市郷土の森博物館', lat: 35.6578, lng: 139.4630,
+    category: 'flower', accuracy: 'approx',
+    rule: { type: 'fixed', start: '06-01', end: '06-30' },
+  },
+  {
+    id: 'sengenyama-kisuge',
+    name: 'ムサシノキスゲの見頃（浅間山公園）',
+    city: '府中市', place: '浅間山公園', lat: 35.6735, lng: 139.5148,
+    category: 'flower', accuracy: 'approx',
+    rule: { type: 'fixed', start: '05-08', end: '05-25' },
+    note: '浅間山にだけ自生する花。',
+  },
+  {
+    id: 'derby',
+    name: '日本ダービー（東京競馬場）',
+    city: '府中市', place: '東京競馬場', lat: 35.6625, lng: 139.4850,
+    category: 'sports', accuracy: 'approx',
+    rule: { type: 'nthWeekday', month: 5, n: -1, weekday: 0 },
+    note: '例年5月最終日曜。',
+  },
+  {
+    id: 'tennosho-autumn',
+    name: '天皇賞（秋）（東京競馬場）',
+    city: '府中市', place: '東京競馬場', lat: 35.6625, lng: 139.4850,
+    category: 'sports', accuracy: 'approx',
+    rule: { type: 'nthWeekday', month: 10, n: -1, weekday: 0 },
+    note: '例年10月最終日曜。',
+  },
+  {
+    id: 'japancup',
+    name: 'ジャパンカップ（東京競馬場）',
+    city: '府中市', place: '東京競馬場', lat: 35.6625, lng: 139.4850,
+    category: 'sports', accuracy: 'approx',
+    rule: { type: 'nthWeekday', month: 11, n: -1, weekday: 0 },
+    note: '例年11月最終日曜。',
+  },
+
+  // ── 日野 ─────────────────────────────
+  {
+    id: 'shinsengumi',
+    name: 'ひの新選組まつり',
+    city: '日野市', place: '日野駅・日野宿本陣周辺', lat: 35.6790, lng: 139.3940,
+    category: 'culture', accuracy: 'approx',
+    rule: { type: 'nthWeekday', month: 5, n: 2, weekday: 6, days: 2 },
+    note: '隊士パレードなど。例年5月第2土日。',
+  },
+  {
+    id: 'takahata-ajisai',
+    name: 'あじさいまつり（高幡不動尊）',
+    city: '日野市', place: '高幡不動尊', lat: 35.6617, lng: 139.4122,
+    category: 'flower', accuracy: 'approx',
+    rule: { type: 'fixed', start: '06-01', end: '07-05' },
+    note: '山内に約200種7,500株のあじさい。',
+  },
+  {
+    id: 'takahata-momiji',
+    name: '紅葉まつり（高幡不動尊）',
+    city: '日野市', place: '高幡不動尊', lat: 35.6617, lng: 139.4122,
+    category: 'flower', accuracy: 'approx',
+    rule: { type: 'fixed', start: '11-01', end: '11-30' },
+  },
+  {
+    id: 'takahata-gozare',
+    name: 'ござれ市（高幡不動尊の骨董市）',
+    city: '日野市', place: '高幡不動尊', lat: 35.6617, lng: 139.4122,
+    category: 'market', accuracy: 'approx',
+    rule: { type: 'monthly', n: 3, weekday: 0 },
+    note: '毎月第3日曜。骨董・古着など。ふらっと行くのにちょうどいい。',
+  },
+
+  // ── 周辺（立川・国立・調布・多摩） ─────
+  {
+    id: 'showakinen-koyo',
+    name: '黄葉・紅葉まつり（昭和記念公園）',
+    city: '立川市', place: '国営昭和記念公園', lat: 35.7040, lng: 139.3960,
+    category: 'flower', accuracy: 'approx',
+    rule: { type: 'fixed', start: '11-01', end: '11-30' },
+    note: 'かたらいのイチョウ並木が見どころ。',
+  },
+  {
+    id: 'kunitachi-tenkaichi',
+    name: '天下市（国立 大学通り）',
+    city: '国立市', place: '大学通り', lat: 35.6930, lng: 139.4430,
+    category: 'market', accuracy: 'approx',
+    rule: { type: 'fixed', start: '11-01', end: '11-03' },
+    note: '例年11月上旬の3日間。年によって日程が変わるので要確認。',
+  },
+  {
+    id: 'jindaiji-daruma',
+    name: '深大寺だるま市',
+    city: '調布市', place: '深大寺', lat: 35.6700, lng: 139.5550,
+    category: 'matsuri', accuracy: 'fixed',
+    rule: { type: 'fixed', start: '03-03', end: '03-04' },
+  },
+  {
+    id: 'jindai-rose-autumn',
+    name: '秋のバラフェスタ（神代植物公園）',
+    city: '調布市', place: '神代植物公園', lat: 35.6720, lng: 139.5490,
+    category: 'flower', accuracy: 'approx',
+    rule: { type: 'fixed', start: '10-01', end: '10-31' },
+  },
+  {
+    id: 'tamacenter-illumination',
+    name: '多摩センターイルミネーション',
+    city: '多摩市', place: '多摩センター駅周辺', lat: 35.6250, lng: 139.4240,
+    category: 'light', accuracy: 'approx',
+    rule: { type: 'fixed', start: '11-14', end: '12-25' },
+  },
+];

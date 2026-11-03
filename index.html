@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2f6f4f">
+  <title>たまふら｜多摩地域の休日イベント</title>
+  <meta name="description" content="東京・多摩地域26市の公式イベント情報を毎日集めて、休日にふらっと行けるイベントを日付・距離・市で探せるサイトです。">
+  <meta property="og:title" content="たまふら｜多摩地域の休日イベント">
+  <meta property="og:description" content="多摩地域26市の公式イベント情報を毎日集めて、休日にふらっと行けるイベントを探せます。">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>たまふら <small>多摩地域の休日イベント</small></h1>
+  </header>
+
+  <main>
+    <nav class="tabs" aria-label="期間">
+      <button data-range="dayoff" class="active">次の休み</button>
+      <button data-range="month">30日以内</button>
+      <button data-range="season">90日以内</button>
+    </nav>
+    <p class="range-label"><span id="range-label"></span> <span id="count" class="hint"></span></p>
+
+    <section class="filters">
+      <label>どこから
+        <select id="base"></select>
+      </label>
+      <label id="km-wrap">距離 <output id="km-out"></output>
+        <input id="km" type="range" min="2" max="40" step="1" value="10">
+      </label>
+      <div id="cats" class="chips"></div>
+      <details class="city-filter">
+        <summary>市で絞り込む：<span id="city-summary">すべての市</span></summary>
+        <div class="city-actions">
+          <button type="button" id="city-clear">絞り込みを解除</button>
+        </div>
+        <div id="cities" class="chips"></div>
+        <p class="hint">押した市だけを表示します（複数選べます）。数字は今の条件での件数です。</p>
+      </details>
+      <details class="places">
+        <summary>よく使う場所を登録（自宅・最寄り駅など）</summary>
+        <form id="place-search" class="place-search">
+          <input name="q" required placeholder="住所や地名（例: 立川市曙町）" aria-label="住所や地名">
+          <button type="submit">検索</button>
+        </form>
+        <ul id="place-results" class="place-results"></ul>
+        <button type="button" id="place-here" class="linkish">今いる場所を登録する</button>
+        <h3 class="sub">登録した場所</h3>
+        <ul id="place-list" class="place-list"></ul>
+        <p class="hint">登録した場所は「どこから」で選べるようになり、そこからの距離で絞り込めます。場所はこの端末のブラウザにだけ保存されます。住所の検索には国土地理院の住所検索を使います（入力した文字は国土地理院に送られます）。</p>
+      </details>
+    </section>
+
+    <section id="list" class="list" aria-live="polite"></section>
+
+    <details class="add">
+      <summary>＋ 自分でイベントを追加</summary>
+      <form id="add-form">
+        <label>名前<input name="name" required placeholder="例: 駅前マルシェ"></label>
+        <label>開始日<input name="start" type="date" required></label>
+        <label>終了日<input name="end" type="date"></label>
+        <label>場所<input name="place" placeholder="例: ○○駅前"></label>
+        <label>メモ・URL<input name="note"></label>
+        <p class="hint">追加したイベントはこの端末のブラウザにだけ保存されます（ほかの人には見えません）。</p>
+        <button type="submit">追加</button>
+      </form>
+    </details>
+
+    <section class="sources">
+      <h2>情報について</h2>
+      <p id="official-status" class="hint"></p>
+      <details>
+        <summary>多摩地域26市の公式サイトと取得状況</summary>
+        <ul id="sources" class="cities"></ul>
+      </details>
+      <details>
+        <summary>このサイトについて・ご利用にあたって</summary>
+        <div class="about">
+          <p>たまふらは、東京都の多摩地域26市の公式サイトに載っているイベント情報を毎日自動で集めて、休日に気軽に行けるイベントを探しやすくした個人運営のサイトです。各市が運営しているものではありません。</p>
+          <ul>
+            <li>掲載しているのはイベントのタイトル・日付・場所と、元のページへのリンクです。<strong>内容・申込方法・中止や変更は、必ずリンク先の公式ページで確認してください。</strong></li>
+            <li>相談会・説明会・講座・定例の教室・子育てひろば・健診など、「ふらっと行く」向きでないものは自動で除いています。そのため、各市のすべてのイベントが載っているわけではありません。</li>
+            <li><span class="badge approx">目安</span> の付いたイベントは「例年このころ」という日程から計算したもので、年によってずれることがあります。</li>
+            <li>市の公式情報の距離は、市役所の位置からの目安です。</li>
+            <li>掲載内容の正確さは保証できません。このサイトの利用によって生じた損害について、運営者は責任を負いません。</li>
+          </ul>
+          <h3 class="sub">プライバシー</h3>
+          <ul>
+            <li>登録した場所・自分で追加したイベント・表示の設定は、この端末のブラウザにだけ保存されます。運営者には送られません。</li>
+            <li>「現在地」は距離の計算にだけ使い、保存も送信もしません（「今いる場所を登録する」を押したときだけ、この端末に保存します）。</li>
+            <li>住所検索で入力した文字は、検索のため国土地理院に送られます。</li>
+            <li>アクセス解析や広告は使っていません。</li>
+          </ul>
+          <p>掲載内容の誤りや、掲載を止めてほしいなどのご連絡は <a href="https://github.com/Uranyan963/Uranyan/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお願いします。</p>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

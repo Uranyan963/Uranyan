@@ -1,0 +1,1 @@
+# 下見したいURL（1行1つ）。push するか Actions の probe を手動実行すると scraper/probe/ に保存される

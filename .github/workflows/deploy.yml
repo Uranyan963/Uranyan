@@ -1,0 +1,52 @@
+# 毎朝、市のサイトからイベントを集めて GitHub Pages に公開する。
+# main への push でも公開し直す。プルリクエストでは「テスト＋取得」まで確認して公開はしない。
+name: deploy (収集して公開)
+on:
+  schedule:
+    - cron: '37 20 * * *' # 毎日 朝5:37（日本時間）
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deploy-${{ github.event_name == 'pull_request' && github.ref || 'pages' }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - name: 公開中のデータを取得（取得に失敗した市は前回分を引き継ぐため）
+        run: |
+          mkdir -p data
+          curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/events.json" -o data/events.json \
+            || echo "公開中のデータはまだありません"
+      - name: 市のサイトからイベントを取得
+        run: node scraper/collect.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: 公開するファイルをまとめる
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.webmanifest icon.svg src data _site/
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
