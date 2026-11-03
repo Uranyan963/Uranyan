@@ -1,7 +1,8 @@
 import { CATEGORIES, CITIES, EVENTS } from './data.js';
-import { addDays, nextDaysOff, todayYmd, weekday, HOLIDAYS } from './dates.js';
+import { addDays, diffDays, nextDaysOff, todayYmd, weekday, HOLIDAYS } from './dates.js';
 import { listOccurrences } from './core.js';
 import { searchAddress } from './places.js';
+import { showMap } from './map.js';
 
 const $ = (sel) => document.querySelector(sel);
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
@@ -24,12 +25,17 @@ function save() {
 }
 
 const defaults = {
-  range: 'dayoff', base: 'none', km: 10, cats: Object.keys(CATEGORIES), cities: [], places: [], custom: [],
+  range: 'dayoff', // 'dayoff' | 'month' | 'season' | 'pick'
+  pickFrom: null, pickTo: null, pickMonth: null, // カレンダーで選んだ日
+  view: 'list', // 'list' | 'map'
+  bigOnly: false,
+  base: 'none', km: 10, cats: Object.keys(CATEGORIES), cities: [], places: [], custom: [],
 };
 const state = { ...defaults };
 for (const [k, v] of Object.entries(load())) if (v !== undefined && v !== null) state[k] = v;
 
 let here = null;
+let awaitingEnd = false; // カレンダーで1日選んだ直後（次に後ろの日を押すと期間になる）
 let official = []; // data/events.json（市の公式サイトから毎日自動取得）
 
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
@@ -43,8 +49,15 @@ function md(ymd) {
 }
 const period = (from, to) => (from === to ? md(from) : `${md(from)} 〜 ${md(to)}`);
 
+/** 大きなイベントかどうか（例年の行事は大きなイベントとして扱う） */
+export const scaleOf = (ev) => ev.scale || (ev.accuracy === 'fixed' || ev.accuracy === 'approx' ? 'big' : 'small');
+
 function currentRange() {
   const today = todayYmd();
+  if (state.range === 'pick') {
+    const from = state.pickFrom || today;
+    return [from, state.pickTo && state.pickTo >= from ? state.pickTo : from];
+  }
   if (state.range === 'dayoff') return nextDaysOff(today);
   return [today, addDays(today, state.range === 'month' ? 30 : 90)];
 }
@@ -100,7 +113,42 @@ function customEvents() {
   }));
 }
 
-function card({ event: ev, occ, distances }) {
+/** 期間 [from, to] に開催があるイベントを、日付以外のすべての条件で絞り込んで返す */
+function filteredRows(from, to, { useCities = true } = {}) {
+  const rows = listOccurrences([...EVENTS, ...official, ...customEvents()], {
+    from, to, bases: currentBases(), maxKm: state.km >= MAX_KM ? Infinity : state.km,
+    categories: new Set([...state.cats, 'custom']),
+  });
+  return rows.filter((r) => (!state.bigOnly || scaleOf(r.event) === 'big' || r.event.accuracy === 'custom')
+    // 市の指定がないイベント（自分で追加したもの）は常に表示
+    && (!useCities || !state.cities.length || !r.event.city || state.cities.includes(r.event.city)));
+}
+
+// ── Googleカレンダーへの追加（1日ずつ） ─────────────────────
+function calUrl(ev, day) {
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.name)}`
+    + `&dates=${day.replaceAll('-', '')}/${addDays(day, 1).replaceAll('-', '')}`
+    + `&location=${encodeURIComponent([ev.city, ev.place].filter(Boolean).join(' '))}`
+    + (ev.url ? `&details=${encodeURIComponent(ev.url)}` : '');
+}
+
+function calAdd(ev, occ, viewFrom) {
+  if (occ.start === occ.end) {
+    return `<a href="${calUrl(ev, occ.start)}" target="_blank" rel="noopener">カレンダーに追加</a>`;
+  }
+  // 期間のあるイベントは、行く日を選んでその日だけ追加する
+  const today = todayYmd();
+  let day = viewFrom > occ.start ? viewFrom : occ.start;
+  if (day < today && occ.end >= today) day = today;
+  if (day > occ.end) day = occ.end;
+  return `<details class="caladd"><summary>カレンダーに追加</summary>
+    <label>行く日 <input type="date" min="${occ.start}" max="${occ.end}" value="${day}"
+      data-cal-name="${esc(ev.name)}" data-cal-city="${esc(ev.city || '')}" data-cal-place="${esc(ev.place || '')}" data-cal-url="${esc(ev.url || '')}"></label>
+    <a class="caladd-go" href="${calUrl(ev, day)}" target="_blank" rel="noopener">この日で追加</a></details>`;
+}
+
+// ── 1件分の表示（リストと地図のポップアップで共用） ─────────────
+export function eventHtml({ event: ev, occ, distances }, viewFrom, { compact = false } = {}) {
   const year = occ.start.slice(0, 4);
   const nearest = [...distances].sort((a, b) => a.km - b.km)[0];
   const origin = nearest ? `&origin=${nearest.base.lat},${nearest.base.lng}` : '';
@@ -109,38 +157,94 @@ function card({ event: ev, occ, distances }) {
     : `${ev.lat},${ev.lng}`;
   const mapUrl = `https://www.google.com/maps/dir/?api=1${origin}&destination=${dest}&travelmode=transit`;
   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${ev.name} ${year}`)}`;
-  const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.name)}`
-    + `&dates=${occ.start.replaceAll('-', '')}/${addDays(occ.end, 1).replaceAll('-', '')}`
-    + `&location=${encodeURIComponent(ev.place || '')}`;
-
   const badge = {
     fixed: '<span class="badge fixed">毎年この日程</span>',
     approx: '<span class="badge approx">目安</span>',
     custom: '<span class="badge custom">自分で追加</span>',
     official: '<span class="badge fixed">市の公式情報</span>',
-  }[ev.accuracy];
+  }[ev.accuracy] || '';
+  const big = scaleOf(ev) === 'big' ? '<span class="badge big">大きなイベント</span>' : '';
   const dist = distances.map((d) => `${esc(d.base.name)}から${d.km.toFixed(1)}km`).join(' / ');
   const where = ev.approxLoc ? '（市役所までの目安）' : '';
+  const days = diffDays(occ.start, occ.end) + 1;
 
-  return `<article class="card">
-    <div class="when">${period(occ.start, occ.end)}${occ.label ? ` <b>${esc(occ.label)}</b>` : ''}</div>
+  return `<div class="when">${period(occ.start, occ.end)}${days > 1 ? ` <span class="hint">${days}日間</span>` : ''}${occ.label ? ` <b>${esc(occ.label)}</b>` : ''}</div>
     <h3>${esc(ev.name)}</h3>
-    <div class="meta">${badge} <span class="cat">${esc(CATEGORIES[ev.category] || 'その他')}</span>
+    <div class="meta">${big}${badge} <span class="cat">${esc(CATEGORIES[ev.category] || 'その他')}</span>
       ${ev.city ? `<span>${esc(ev.city)}</span>` : ''} <span>${esc(ev.place || '')}</span></div>
     ${dist ? `<div class="dist">📍 ${dist}${where}</div>` : ''}
-    ${ev.tags ? `<div class="dist">${esc(ev.tags)}</div>` : ''}
-    ${ev.note ? `<p class="note">${linkify(ev.note)}</p>` : ''}
+    ${!compact && ev.tags ? `<div class="dist">${esc(ev.tags)}</div>` : ''}
+    ${!compact && ev.note ? `<p class="note">${linkify(ev.note)}</p>` : ''}
     <div class="actions">
       <a href="${mapUrl}" target="_blank" rel="noopener">行き方</a>
       ${ev.url
     ? `<a href="${esc(ev.url)}" target="_blank" rel="noopener">公式ページ</a>`
     : `<a href="${searchUrl}" target="_blank" rel="noopener">今年の情報を検索</a>`}
-      <a href="${calUrl}" target="_blank" rel="noopener">カレンダーに追加</a>
+      ${calAdd(ev, occ, viewFrom)}
       ${ev.accuracy === 'custom' ? `<button class="del" data-id="${esc(ev.id)}">削除</button>` : ''}
-    </div>
-  </article>`;
+    </div>`;
 }
 
+const card = (row, viewFrom) => `<article class="card${scaleOf(row.event) === 'big' ? ' big' : ''}">${eventHtml(row, viewFrom)}</article>`;
+
+// ── カレンダー（日付を選ぶ） ────────────────────────
+function renderPicker() {
+  const today = todayYmd();
+  const month = state.pickMonth || (state.pickFrom || today).slice(0, 7);
+  const first = `${month}-01`;
+  const last = addDays(`${addDays(first, 32).slice(0, 7)}-01`, -1);
+  // その月の各日に、条件に合うイベントが何件あるか
+  const counts = {};
+  const bigs = {};
+  for (const r of filteredRows(first, last)) {
+    const s = r.occ.start > first ? r.occ.start : first;
+    const e = r.occ.end < last ? r.occ.end : last;
+    for (let d = s; d <= e; d = addDays(d, 1)) {
+      counts[d] = (counts[d] || 0) + 1;
+      // 長く続くもの（紅葉まつりなど）で毎日に印がつかないよう、1週間以内のものだけ
+      if (scaleOf(r.event) === 'big' && diffDays(r.occ.start, r.occ.end) < 7) bigs[d] = (bigs[d] || 0) + 1;
+    }
+  }
+  const [from, to] = currentRange();
+  const cells = [];
+  for (let i = 0; i < weekday(first); i++) cells.push('<span></span>');
+  for (let d = first; d <= last; d = addDays(d, 1)) {
+    const wd = weekday(d);
+    const cls = [
+      d in HOLIDAYS || wd === 0 ? 'sun' : wd === 6 ? 'sat' : '',
+      d === today ? 'today' : '',
+      state.range === 'pick' && d >= from && d <= to ? 'sel' : '',
+      d < today ? 'past' : '',
+    ].filter(Boolean).join(' ');
+    const n = counts[d] || 0;
+    cells.push(`<button type="button" class="${cls}" data-day="${d}" aria-label="${d} ${n}件">
+      <b>${Number(d.slice(8))}</b><small>${n ? n : ''}</small>${bigs[d] ? '<i class="dot" title="大きなイベントあり"></i>' : ''}</button>`);
+  }
+  const [y, m] = month.split('-').map(Number);
+  $('#picker').innerHTML = `<div class="pk-head">
+      <button type="button" data-month="-1" aria-label="前の月">‹</button>
+      <strong>${y}年${m}月</strong>
+      <button type="button" data-month="1" aria-label="次の月">›</button>
+    </div>
+    <div class="pk-grid">${WD.map((w, i) => `<span class="pk-wd ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</span>`).join('')}${cells.join('')}</div>
+    <p class="hint">日付を押すとその日のイベントを表示。続けて別の日を押すと期間になります。数字は件数、<i class="dot"></i>は大きなイベント（1週間以内のもの）がある日。</p>`;
+}
+
+function pickDay(d) {
+  // 日付を押した直後に、それより後の日を押したら期間にする
+  if (awaitingEnd && state.range === 'pick' && d > state.pickFrom) {
+    state.pickTo = d;
+    awaitingEnd = false;
+  } else {
+    state.pickFrom = d;
+    state.pickTo = d;
+    awaitingEnd = true;
+  }
+  state.range = 'pick';
+  save(); render();
+}
+
+// ── 全体の描画 ────────────────────────────────
 function render() {
   const [from, to] = currentRange();
   const bases = currentBases();
@@ -148,18 +252,30 @@ function render() {
   $('#km-out').textContent = state.km >= MAX_KM ? '制限なし' : `${state.km}km以内`;
   $('#km-wrap').hidden = bases.length === 0;
   document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.range === state.range));
+  document.querySelectorAll('.views button').forEach((b) => b.classList.toggle('active', b.dataset.view === state.view));
   document.querySelectorAll('#cats input').forEach((i) => { i.checked = state.cats.includes(i.value); });
+  $('#big-only').checked = state.bigOnly;
+  $('#picker').hidden = state.range !== 'pick';
+  if (state.range === 'pick') renderPicker();
 
-  const all = listOccurrences([...EVENTS, ...official, ...customEvents()], {
-    from, to, bases, maxKm: state.km >= MAX_KM ? Infinity : state.km, categories: new Set([...state.cats, 'custom']),
-  });
-  renderCities(all);
-  // 市の指定がないイベント（自分で追加したもの）は常に表示
-  const rows = state.cities.length ? all.filter((r) => !r.event.city || state.cities.includes(r.event.city)) : all;
+  renderCities(filteredRows(from, to, { useCities: false }));
+  const rows = filteredRows(from, to)
+    // 同じ日なら大きなイベントを先に
+    .sort((a, b) => a.occ.start.localeCompare(b.occ.start)
+      || (scaleOf(a.event) === 'big' ? 0 : 1) - (scaleOf(b.event) === 'big' ? 0 : 1)
+      || (a.nearest ?? 99) - (b.nearest ?? 99));
   $('#count').textContent = `${rows.length}件`;
-  $('#list').innerHTML = rows.length
-    ? rows.map(card).join('')
-    : '<p class="empty">この条件に合うイベントはありません。期間や距離を広げるか、市の絞り込みを解除してみてください。</p>';
+
+  $('#list').hidden = state.view !== 'list';
+  $('#map').hidden = state.view !== 'map';
+  if (state.view === 'map') {
+    showMap($('#map'), rows, { bases, popup: (row) => eventHtml(row, from, { compact: true }), isBig: (ev) => scaleOf(ev) === 'big' })
+      .catch(() => { $('#map').innerHTML = '<p class="empty">地図を読み込めませんでした。</p>'; });
+  } else {
+    $('#list').innerHTML = rows.length
+      ? rows.map((r) => card(r, from)).join('')
+      : '<p class="empty">この条件に合うイベントはありません。期間や距離を広げるか、市の絞り込みを解除してみてください。</p>';
+  }
 }
 
 function renderCities(rows) {
@@ -206,8 +322,27 @@ function setup() {
   renderSources({});
 
   document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
-    state.range = b.dataset.range; save(); render();
+    state.range = b.dataset.range;
+    awaitingEnd = false;
+    if (state.range === 'pick' && (!state.pickFrom || state.pickFrom < todayYmd())) { state.pickFrom = todayYmd(); state.pickTo = state.pickFrom; }
+    save(); render();
   }));
+  document.querySelectorAll('.views button').forEach((b) => b.addEventListener('click', () => {
+    state.view = b.dataset.view; save(); render();
+  }));
+  $('#picker').addEventListener('click', (e) => {
+    const day = e.target.closest('[data-day]')?.dataset.day;
+    if (day) { pickDay(day); return; }
+    const step = Number(e.target.closest('[data-month]')?.dataset.month);
+    if (step) {
+      const cur = state.pickMonth || (state.pickFrom || todayYmd()).slice(0, 7);
+      const [y, m] = cur.split('-').map(Number);
+      const d = new Date(Date.UTC(y, m - 1 + step, 1));
+      state.pickMonth = d.toISOString().slice(0, 7);
+      save(); renderPicker();
+    }
+  });
+  $('#big-only').addEventListener('change', (e) => { state.bigOnly = e.target.checked; save(); render(); });
   $('#km').addEventListener('input', (e) => { state.km = Number(e.target.value); save(); render(); });
   $('#cats').addEventListener('change', () => {
     state.cats = [...document.querySelectorAll('#cats input:checked')].map((i) => i.value); save(); render();
@@ -219,6 +354,14 @@ function setup() {
     save(); render();
   });
   $('#city-clear').addEventListener('click', () => { state.cities = []; save(); render(); });
+
+  // カレンダーに追加：行く日を変えたらリンクを作り直す（リストと地図のポップアップの両方）
+  document.addEventListener('change', (e) => {
+    const input = e.target.closest('[data-cal-name]');
+    if (!input || !input.value) return;
+    const ev = { name: input.dataset.calName, city: input.dataset.calCity, place: input.dataset.calPlace, url: input.dataset.calUrl };
+    input.closest('.caladd').querySelector('.caladd-go').href = calUrl(ev, input.value);
+  });
 
   $('#base').addEventListener('change', (e) => {
     state.base = e.target.value; save();
@@ -273,7 +416,7 @@ function setup() {
     state.custom.push({ id: `c${Date.now()}`, ...f });
     save(); e.target.reset(); render();
   });
-  $('#list').addEventListener('click', (e) => {
+  document.addEventListener('click', (e) => {
     const id = e.target.closest('.del')?.dataset.id;
     if (id && confirm('このイベントを削除しますか？')) {
       state.custom = state.custom.filter((c) => c.id !== id); save(); render();

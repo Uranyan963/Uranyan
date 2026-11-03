@@ -9,6 +9,10 @@ const EXCLUDE = new RegExp([
 const MAX_DATES = 60; // 毎日のようにある定例行事は除く
 const HORIZON_DAYS = 180; // 半年より先は載せない（入力ミスや気の早すぎる告知）
 
+// 大きなイベント（まつり・花火・フェスなど、人が集まって見て回れるもの）
+const BIG = /まつり|祭|フェスタ|フェス|フェア|花火|カーニバル|パレード|マラソン|駅伝|イルミネーション|ライトアップ|マルシェ|朝市|フリーマーケット|蚤の市|骨董市|映画祭|音楽祭|特別公開|記念行事|複合イベント/;
+export const isBig = (ev) => BIG.test(`${ev.title} ${ev.category || ''}`) && !/前夜祭|チャレンジ|説明|準備/.test(ev.title);
+
 /** 日付の配列 → 連続する日をまとめた [start, end] の配列 */
 export function toRanges(dates) {
   const sorted = [...new Set(dates)].sort();
@@ -57,6 +61,7 @@ export function normalize(raw, from, city) {
       tags: ev.category,
       note: ev.time ? `時間: ${ev.time}`.slice(0, 80) : '', // 説明文は転載せず、詳細は公式ページへ
       accuracy: 'official',
+      scale: isBig(ev) ? 'big' : 'small',
       rule: { type: 'ranges', ranges: toRanges(ev.dates) },
     }))
     .sort((a, b) => a.rule.ranges[0][0].localeCompare(b.rule.ranges[0][0]));

@@ -124,3 +124,60 @@ h3.sub { font-size: .85rem; margin: 10px 0 2px; }
 .about { font-size: .88rem; }
 .about ul { padding-left: 1.2em; }
 #km-wrap[hidden] { display: none; }
+
+/* 期間タブ（4つ） */
+.tabs button { font-size: .9rem; }
+
+/* カレンダー（日付を選ぶ） */
+.picker { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-top: 8px; }
+.picker[hidden] { display: none; }
+.pk-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.pk-head button { font: inherit; font-size: 1.3rem; width: 40px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); cursor: pointer; }
+.pk-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.pk-wd { text-align: center; font-size: .75rem; color: var(--muted); }
+.pk-grid button {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 46px; padding: 2px 0; border: 1px solid transparent; border-radius: 8px;
+  background: var(--bg); color: var(--text); font: inherit; cursor: pointer;
+}
+.pk-grid button b { font-size: .95rem; font-weight: 600; }
+.pk-grid button small { font-size: .7rem; color: var(--muted); min-height: 1em; }
+.pk-grid button.past { opacity: .4; }
+.pk-grid button.today { border-color: var(--accent); }
+.pk-grid button.sel { background: var(--accent); color: var(--bg); }
+.pk-grid button.sel small, .pk-grid button.sel.sun, .pk-grid button.sel.sat { color: var(--bg); }
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #e07a2f; vertical-align: middle; }
+.pk-grid .dot { position: absolute; top: 4px; right: 5px; }
+
+/* 大きなイベント */
+.badge.big { background: #e07a2f; color: #fff; }
+.card.big { border-left: 4px solid #e07a2f; }
+.big-toggle { align-self: start; font-size: .85rem; }
+
+/* リスト / 地図の切り替え */
+.views { display: flex; gap: 6px; margin: 4px 0 10px; }
+.views button {
+  flex: 1; padding: 8px 4px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--card); color: var(--text); font: inherit; cursor: pointer;
+}
+.views button.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.map { height: 70vh; min-height: 360px; border-radius: 12px; border: 1px solid var(--line); overflow: hidden; }
+.map[hidden], .list[hidden] { display: none; }
+.pin { display: block; width: 100%; height: 100%; border-radius: 50%; background: #2f6f4f; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.pin.big { background: #e07a2f; }
+.pin.approx { opacity: .75; border-style: dashed; }
+.pin.base { background: #2563a8; border-radius: 4px; transform: rotate(45deg); }
+.popup h3 { font-size: 1rem; margin: 2px 0 4px; }
+.popup .meta, .popup .dist { font-size: .75rem; }
+.popup .actions { font-size: .8rem; }
+.leaflet-popup-content { margin: 10px 12px; line-height: 1.5; }
+@media (prefers-color-scheme: dark) {
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card); color: var(--text); }
+}
+
+/* カレンダーに追加（行く日を選ぶ） */
+.caladd { display: inline-block; }
+.caladd summary { cursor: pointer; color: var(--accent); text-decoration: underline; list-style: none; }
+.caladd summary::-webkit-details-marker { display: none; }
+.caladd[open] { display: block; width: 100%; padding: 6px 8px; margin-top: 4px; background: var(--bg); border-radius: 8px; }
+.caladd label { font-size: .85rem; margin-right: 8px; }

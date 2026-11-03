@@ -25,14 +25,15 @@ jobs:
       - name: 公開中のデータを取得（取得に失敗した市は前回分を引き継ぐため）
         run: |
           mkdir -p data
-          curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/events.json" -o data/events.json \
-            || echo "公開中のデータはまだありません"
+          base="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data"
+          curl -fsSL "$base/events.json" -o data/events.json || echo "公開中のデータはまだありません"
+          curl -fsSL "$base/geocache.json" -o data/geocache.json || echo "位置のキャッシュはまだありません"
       - name: 市のサイトからイベントを取得
         run: node scraper/collect.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: 公開するファイルをまとめる
         run: |
           mkdir -p _site
-          cp -r index.html manifest.webmanifest icon.svg src data _site/
+          cp -r index.html manifest.webmanifest icon.svg src vendor data _site/
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
