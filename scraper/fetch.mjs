@@ -2,7 +2,9 @@
 // - robots.txt で禁止されているURLは取得しない
 // - 同じサイトへは間隔をあけて1件ずつ取得する
 // - 連絡先（このリポジトリ）を User-Agent に入れる
-export const USER_AGENT = 'tamafura-event-collector/1.0 (+https://github.com/Uranyan963/Uranyan)';
+// 連絡先は GitHub Actions のリポジトリ名から作る（リポジトリ名を変えても追従する）
+const REPO = process.env.GITHUB_REPOSITORY || 'Uranyan963/tamafura';
+export const USER_AGENT = `tamafura-event-collector/1.0 (+https://github.com/${REPO})`;
 const UA_TOKEN = 'tamafura';
 const INTERVAL_MS = Number(process.env.FETCH_INTERVAL_MS ?? 1500);
 

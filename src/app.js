@@ -313,7 +313,15 @@ async function loadOfficial() {
   } catch { /* 自動取得データがなくても登録イベントだけで動く */ }
 }
 
+// 連絡先リンク：github.io で公開しているときは、URLからリポジトリを割り出す（リポジトリ名を変えても追従）
+function fixIssuesLink() {
+  const m = location.hostname.match(/^([\w-]+)\.github\.io$/);
+  const repo = location.pathname.split('/').filter(Boolean)[0];
+  if (m && repo) $('#issues-link').href = `https://github.com/${m[1]}/${repo}/issues`;
+}
+
 function setup() {
+  fixIssuesLink();
   $('#km').value = state.km;
   $('#cats').innerHTML = Object.entries(CATEGORIES)
     .map(([k, v]) => `<label class="chip"><input type="checkbox" value="${k}">${v}</label>`).join('');

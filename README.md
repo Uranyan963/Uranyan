@@ -34,7 +34,7 @@ GitHub Actions（毎朝5:37）
 2. リポジトリの **Settings → General** で Default branch を `main` にする（毎朝の自動実行はデフォルトブランチで動く）
 3. **Settings → Pages** の Source を **GitHub Actions** にする
 4. **Actions → deploy (収集して公開) → Run workflow** で初回の公開を実行する
-5. `https://uranyan963.github.io/Uranyan/` で公開される
+5. `https://uranyan963.github.io/tamafura/` で公開される（URLはリポジトリ名で決まる。Settings → General の Repository name で変えられる）
 
 ### 運用
 
