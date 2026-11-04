@@ -24,7 +24,9 @@
       <button data-range="dayoff" class="active">次の休み</button>
       <button data-range="month">30日以内</button>
       <button data-range="season">90日以内</button>
+      <button data-range="pick">📅 日付</button>
     </nav>
+    <div id="picker" class="picker" hidden></div>
     <p class="range-label"><span id="range-label"></span> <span id="count" class="hint"></span></p>
 
     <section class="filters">
@@ -35,6 +37,7 @@
         <input id="km" type="range" min="2" max="40" step="1" value="10">
       </label>
       <div id="cats" class="chips"></div>
+      <label class="chip big-toggle" title="まつり・花火・フェスなど"><input type="checkbox" id="big-only">大きなイベントだけ</label>
       <details class="city-filter">
         <summary>市で絞り込む：<span id="city-summary">すべての市</span></summary>
         <div class="city-actions">
@@ -57,7 +60,12 @@
       </details>
     </section>
 
+    <nav class="views" aria-label="表示">
+      <button data-view="list" class="active">☰ リスト</button>
+      <button data-view="map">🗺 地図</button>
+    </nav>
     <section id="list" class="list" aria-live="polite"></section>
+    <div id="map" class="map" hidden></div>
 
     <details class="add">
       <summary>＋ 自分でイベントを追加</summary>
@@ -87,7 +95,8 @@
             <li>掲載しているのはイベントのタイトル・日付・場所と、元のページへのリンクです。<strong>内容・申込方法・中止や変更は、必ずリンク先の公式ページで確認してください。</strong></li>
             <li>相談会・説明会・講座・定例の教室・子育てひろば・健診など、「ふらっと行く」向きでないものは自動で除いています。そのため、各市のすべてのイベントが載っているわけではありません。</li>
             <li><span class="badge approx">目安</span> の付いたイベントは「例年このころ」という日程から計算したもので、年によってずれることがあります。</li>
-            <li>市の公式情報の距離は、市役所の位置からの目安です。</li>
+            <li>市の公式情報の場所は、会場名から位置を調べています。分からないものは市役所の位置に表示しています。</li>
+            <li>「大きなイベント」は、まつり・花火・フェスなどの名前から自動で判定した目安です。</li>
             <li>掲載内容の正確さは保証できません。このサイトの利用によって生じた損害について、運営者は責任を負いません。</li>
           </ul>
           <h3 class="sub">プライバシー</h3>
@@ -95,9 +104,9 @@
             <li>登録した場所・自分で追加したイベント・表示の設定は、この端末のブラウザにだけ保存されます。運営者には送られません。</li>
             <li>「現在地」は距離の計算にだけ使い、保存も送信もしません（「今いる場所を登録する」を押したときだけ、この端末に保存します）。</li>
             <li>住所検索で入力した文字は、検索のため国土地理院に送られます。</li>
-            <li>アクセス解析や広告は使っていません。</li>
+            <li>アクセス解析や広告は使っていません。地図には国土地理院の地図タイル（<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>）を使っています。</li>
           </ul>
-          <p>掲載内容の誤りや、掲載を止めてほしいなどのご連絡は <a href="https://github.com/Uranyan963/Uranyan/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお願いします。</p>
+          <p>掲載内容の誤りや、掲載を止めてほしいなどのご連絡は <a id="issues-link" href="https://github.com/Uranyan963/tamafura/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお願いします。</p>
         </div>
       </details>
     </section>
